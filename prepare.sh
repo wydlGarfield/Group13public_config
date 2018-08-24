@@ -40,4 +40,5 @@ sudo chmod 666 ~/hosts
 # Create playbook config file
 cd ~
 sudo wget -c https://raw.githubusercontent.com/wydlGarfield/Group13public_config/master/ansible.cfg
+sudo wget -c https://raw.githubusercontent.com/wydlGarfield/Group13public_config/master/playbook.yml
 #sudo apt install awscli -y
