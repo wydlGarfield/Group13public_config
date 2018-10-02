@@ -5,8 +5,10 @@ useful command:
 ls
 cd
 cat
+vim
 
-sudo bash xx.sh
+sudo bash xx.sh  <br>
 ansible-playbook -i ./hosts xx.yml
 
-ssh -i ~/.ssh/key_name.pem ubuntu@public_IPV4
+ssh -i ~/.ssh/key_name.pem ubuntu@public_IPV4 <br>
+root: sudo su
