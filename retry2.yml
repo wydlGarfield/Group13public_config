@@ -1,0 +1,124 @@
+#-----------------------------------------
+  - name: setup database server
+    hosts: database
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: true
+    
+    
+    vars:
+      wp_mysql_db: wordpress
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      
+    pre_tasks:
+      - name: Install python for Ansible
+        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+        register: output
+        changed_when: output.stdout != ""
+        
+      - name: Install required software
+        apt: name={{ item }} state=present
+        sudo: yes
+        with_items:
+          - apache2
+          - build-essential
+          - python-dev
+          - libmysqlclient-dev
+          - python-mysqldb
+          - mysql-server
+          - mysql-client
+          - python-pip
+          - python3-pip
+      
+    tasks:
+      - name: Install Mysql Server
+        apt:
+          name: mysql-server
+          state: present
+          update_cache: yes
+
+      - name: Install Mysql python module
+        apt:
+          name: python-mysqldb
+          state: latest
+
+      - name: Start Mysql Server
+        sudo: yes
+        service: 
+            name: mysql
+            state: started
+            enabled: true
+
+      - name: change some lines in mysql database file
+        lineinfile: backup=yes state=present dest=/etc/mysql/mysql.conf.d/mysqld.cnf
+            state=absent
+            regexp='^bind'
+        tags:
+            - delete bind
+
+      - name: Accessing and Logging In MySQL
+        shell: |
+            sudo -S mysql -u root -padmin <<EOF
+            CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci; 
+            create user 'wordpress'@'%' IDENTIFIED BY 'admin'; 
+            GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
+            exit
+            EOF
+
+      - name: Create mysql user
+        mysql_user: 
+            name={{ wp_mysql_user }} 
+            password={{ wp_mysql_password }} 
+            priv='*.*:ALL,GRANT'
+
+        become: yes 
+
+      - name: restart mysql
+        service:
+          name: mysql
+          state: restarted
+          enabled: true
+        
+ #——————————————————————————————————————————————————————————————————————
+  - name: setup wordpress web server
+    hosts: web_server
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: true
+    
+ 
+    tasks:
+     - name: Download WordPress
+       get_url: 
+         url: https://wordpress.org/latest.tar.gz 
+         dest: /tmp/wordpress.tar.gz
+
+     - name: Extract WordPress
+       unarchive: 
+         src: https://wordpress.org/latest.tar.gz 
+         dest: /var/www/html/
+         remote_src: yes
+       become: yes
+
+
+     - name: Copy sample config file
+       command: mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php creates=/var/www/html/wordpress/wp-config.php
+       become: yes
+
+     - name: Update WordPress config file
+       lineinfile:
+         dest: /var/www/html/wordpress/wp-config.php
+         regexp: "{{ item.regexp }}"
+         line: "{{ item.line }}"
+       with_items:
+           - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+           - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+           - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+       become: yes
+       
+
+     - name: Waiting for installation
+       wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
