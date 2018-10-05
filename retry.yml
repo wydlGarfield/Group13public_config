@@ -36,9 +36,15 @@
           update_cache: yes
           state: latest
           
+      - name: enable nginx
+        service:
+          name: nginx
+          state: started
+          
       - file:
-        path: "/root/log"
+        path: /root/log
         state: directory
+
           
       # editing config file 
       - name: edit config file
@@ -48,7 +54,7 @@
           insertafter: "http {"
           content: |
             upstream mysite {
-                server {{ server_ip_1 }}:80 weight=2;
+                server {{ server_ip_1 }}:80 weight=1;
                 server {{ server_ip_2 }}:80 weight=1;
                 server {{ server_ip_3 }}:80 backup;
             }
