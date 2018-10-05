@@ -1,6 +1,6 @@
 
 
-- name: setup database server
+  - name: setup database server
     hosts: database
     remote_user: ubuntu
     gather_facts: True
