@@ -102,9 +102,7 @@
             - php-xml
             - php-xmlrpc
             - php-gd
-            - php-mcrypt
             - php-mysql
-            - php-zip
         
      - name: Install common PHP Extensions
        apt: 
