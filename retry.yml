@@ -37,6 +37,8 @@
           - php7.0-cgi
           - php7.0-gd
           - php7.0-mcrypt
+          - python-pip
+          - python3-pip
       
     tasks:
       - name: Install Mysql Server
@@ -49,6 +51,15 @@
         apt:
           name: python-mysqldb
           state: latest
+          
+      - name: Install the MySQL-python through pip
+        sudo: yes
+        pip:
+          name: "{{ item }}"
+          state: forcereinstall
+        with_items:
+          - pip
+          - MySQL-python
 
       - name: Start Mysql Server
         sudo: yes
