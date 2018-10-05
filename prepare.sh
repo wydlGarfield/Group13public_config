@@ -12,7 +12,7 @@ pip install botocore boto boto3
 
 pip install virtualenv ansible2.6
 source ansible2.1/bin/activate
-pip install ansible==2.6.5
+pip install ansible==2.6.4
 pip install redis
 
 mkdir -pv ~/.aws/
