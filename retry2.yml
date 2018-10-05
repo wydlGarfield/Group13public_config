@@ -66,14 +66,7 @@
             GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
             exit
             EOF
-
-      - name: Create mysql user
-        mysql_user: 
-            name={{ wp_mysql_user }} 
-            password={{ wp_mysql_password }} 
-            priv='*.*:ALL,GRANT'
-
-        become: yes 
+        become:yes
 
       - name: restart mysql
         service:
