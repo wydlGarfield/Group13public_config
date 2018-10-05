@@ -220,6 +220,11 @@
           update_cache: yes
           state: latest
           
+      - name: enable nginx
+        service:
+          name: nginx
+          state: started
+          
 #      - file:
 #        path: "/root/log"
 #        state: directory
@@ -232,7 +237,7 @@
           insertafter: "http {"
           content: |
             upstream mysite {
-                server {{ server_ip_1 }}:80 weight=2;
+                server {{ server_ip_1 }}:80 weight=1;
                 server {{ server_ip_2 }}:80 weight=1;
                 server {{ server_ip_3 }}:80 backup;
             }
@@ -256,7 +261,7 @@
          
       # reload nginx
       - name : reload nginx
-#        path: /usr/sbin/
+        path: /usr/sbin/
         service:  name=nginx state=reloaded
 
 #——————————————————————————————————————————————————————
@@ -272,6 +277,26 @@
       wp_mysql_db: wordpress
       wp_mysql_user: wordpress
       wp_mysql_password: admin
+      
+    pre_tasks:
+      - name: Install python for Ansible
+        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+        register: output
+        changed_when: output.stdout != ""
+        
+      - name: Install required software
+        apt: name={{ item }} state=present
+        sudo: yes
+        with_items:
+          - apache2
+          - build-essential
+          - python-dev
+          - libmysqlclient-dev
+          - python-mysqldb
+          - mysql-server
+          - mysql-client
+          - python-pip
+          - python3-pip
       
     tasks:
       - name: Install Mysql Server
@@ -316,10 +341,58 @@
     remote_user: ubuntu
     gather_facts: False
     become_user: root
-    become: true
+    become: yes
+    become_method: sudo
     
+    vars: 
+     
+      wp_mysql_db: wordpress
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      
+    pre_tasks:
+      - name: Install python for Ansible
+        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+        register: output
+        changed_when: output.stdout != ""
  
     tasks:
+    
+     - name: Install Apache2
+       apt:
+            name: "{{item}}"
+            state: present
+       with_items: 
+            - apache2
+            - apache2-doc
+            - apache2-utils
+           
+     - name: Installing php
+       apt: 
+            name: "{{item}}" 
+            state: present
+       with_items:
+            - php
+            - php-cli
+            - php-curl
+            - php-xml
+            - php-xmlrpc
+            - php-gd
+            - php-mysql
+        
+     - name: Install common PHP Extensions
+       apt: 
+            name: libapache2-mod-php
+            state: present
+       notify:
+            - restart apache2
+          
+     - name:  "Start apache Php"
+       service:  "name={{ item }} state=started"
+       with_items:
+       - apache2
+    
+    
      - name: Download WordPress
        get_url: 
          url: https://wordpress.org/latest.tar.gz 
@@ -351,4 +424,9 @@
 
      - name: Waiting for installation
        wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
-
+       
+    handlers:
+    - name: restart apache2
+      service: 
+        name: apache2
+        state: restarted
