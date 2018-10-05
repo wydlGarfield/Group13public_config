@@ -1,0 +1,354 @@
+#this playbook use to set up database instance and web_server instances.
+
+  - name: Set up servers 
+    hosts: local
+    connection: local
+    gather_facts: False
+    tags: provisioning
+
+    vars:
+      instance_type: t2.micro
+      security_group: security2
+      image: ami-0e32ec5bc225539f5
+      keypair: new_key
+      region: us-west-2
+      large_volumes:
+        - device_name: /dev/sda1
+          volume_size: 15
+      small_volumes:
+        - device_name: /dev/sda1
+          volume_size: 8
+      database_count: 1
+      webserver_count: 3
+      nginx_count: 1
+
+    tasks:
+
+      - name: Create a new EC2 key
+        ec2_key:
+          name: "{{ keypair }}"
+          region: "{{ region }}"
+        register: ec2_key_result
+
+      - name: Save private key
+        copy: content="{{ ec2_key_result.key.private_key }}" dest="~/.ssh/new_key.pem" mode=0600
+        when: ec2_key_result.changed
+
+      - name: Create a security group
+        local_action: 
+          module: ec2_group
+          name: "{{ security_group }}"
+          description: Security Group for webserver Servers
+          region: "{{ region }}"
+          rules:
+            # HTTP
+            - proto: tcp
+              from_port: 80
+              to_port: 80
+              cidr_ip: 0.0.0.0/0
+
+            # PostgreSQL
+            - proto: tcp
+              from_port: 5432
+              to_port: 5432
+              cidr_ip: 0.0.0.0/0
+
+            # SSH
+            - proto: tcp
+              from_port: 22
+              to_port: 22
+              cidr_ip: 0.0.0.0/0
+
+            # HTTPS
+            - proto: tcp
+              from_port: 443
+              to_port: 443
+              cidr_ip: 0.0.0.0/0
+          rules_egress:
+            - proto: all
+              cidr_ip: 0.0.0.0/0
+        register: basic_firewall
+
+      # set up database_server
+      - name: set up database_server
+        local_action: ec2
+                      group={{ security_group }}
+                      instance_type={{ instance_type }}
+                      image={{ image }}
+                      wait=true
+                      region={{ region }}
+                      keypair={{ keypair }}
+                      volumes={{ large_volumes }}
+                      count={{ database_count }}
+        register: database_server
+
+      - name: Add the newly created EC2 instance(s) to the local host group (located inside the directory)
+        local_action: lineinfile
+                      dest="./hosts"
+                      regexp={{ item.public_ip }}
+                      insertafter="database" line="{{ item.public_ip }} ansible_python_interpreter=/usr/bin/python3"
+        with_items: "{{ database_server.instances }}"
+
+      - name: Wait for SSH to come up
+        local_action: wait_for
+                      host={{ item.public_ip }}
+                      port=22
+                      state=started
+        with_items: "{{ database_server.instances }}"
+
+      - name: Add tag to Instance(s)
+        local_action: ec2_tag resource={{ item.id }} region={{ region }} state=present
+        with_items: "{{ database_server.instances }}"
+        args:
+          tags:
+            Name: database
+
+      - name: Refresh hosts file
+        meta: refresh_inventory
+
+      # set up web_server
+      - name: set up web_server
+        local_action: ec2
+                      group={{ security_group }}
+                      instance_type={{ instance_type}}
+                      image={{ image }}
+                      wait=true
+                      region={{ region }}
+                      keypair={{ keypair }}
+                      volumes={{ large_volumes }}
+                      count={{ webserver_count }}
+        register: web_server
+
+      - name: Add the newly created EC2 instance(s) to the local host group (located inside the directory)
+        local_action: lineinfile
+                      dest="./hosts"
+                      regexp={{ item.public_ip }}
+                      insertafter="web_server" line="{{ item.public_ip }} ansible_python_interpreter=/usr/bin/python3"
+        with_items: "{{ web_server.instances }}"
+
+      - name: Wait for SSH to come up
+        local_action: wait_for
+                      host={{ item.public_ip }}
+                      port=22
+                      state=started
+        with_items: "{{ web_server.instances }}"
+
+      - name: Add tag to Instance(s)
+        local_action: ec2_tag resource={{ item.id }} region={{ region }} state=present
+        with_items: "{{ web_server.instances }}"
+        args:
+          tags:
+            Name: web_server
+
+      - name: Refresh hosts file
+        meta: refresh_inventory
+      # set up nginx_server
+      - name: set up nginx_server
+        local_action: ec2
+                      group={{ security_group }}
+                      instance_type={{ instance_type}}
+                      image={{ image }}
+                      wait=true
+                      region={{ region }}
+                      keypair={{ keypair }}
+                      volumes={{ small_volumes }}
+                      count={{ nginx_count }}
+        register: nginx_server
+
+      - name: Add the newly created EC2 instance(s) to the local host group (located inside the directory)
+        local_action: lineinfile
+                      dest="./hosts"
+                      regexp={{ item.public_ip }}
+                      insertafter="nginx" line="{{ item.public_ip }} ansible_python_interpreter=/usr/bin/python3"
+        with_items: "{{ nginx_server.instances }}"
+
+      - name: Wait for SSH to come up
+        local_action: wait_for
+                      host={{ item.public_ip }}
+                      port=22
+                      state=started
+        with_items: "{{ nginx_server.instances }}"
+
+      - name: Add tag to Instance(s)
+        local_action: ec2_tag resource={{ item.id }} region={{ region }} state=present
+        with_items: "{{ nginx_server.instances }}"
+        args:
+          tags:
+            Name: nginx
+
+      - name: Refresh hosts file
+        meta: refresh_inventory
+
+
+#      - wait_for: delay=1
+      
+#———————————————————————————————————————————
+  - name: setup nginx management server
+    hosts: nginx
+    remote_user: ubuntu
+    gather_facts: True
+    become_user: root
+    become: true
+
+    vars:
+      db_user: wordpress
+      db_name: wordpress
+      db_password: admin
+      server_ip_1: "{{ groups.web_server.0 }}"
+      server_ip_2: "{{ groups.web_server.1 }}"
+      server_ip_3: "{{ groups.web_server.2 }}"
+      nginx_ip: "{{ groups.nginx.0 }}"
+
+    tasks:
+
+      - name: Update Ubuntu & Install essential tools
+        become: yes
+        apt: 
+          name: "{{ packages }}"
+          state: latest
+          update_cache: yes
+        vars:
+          packages:
+            - python-psycopg2
+            - python3-psycopg2
+
+      # install nginx
+      - name: Install nginx
+        become: yes
+        apt:
+          name: nginx
+          update_cache: yes
+          state: latest
+          
+#      - file:
+#        path: "/root/log"
+#        state: directory
+          
+      # editing config file 
+      - name: edit config file
+        become: yes
+        blockinfile:
+          path: /etc/nginx/nginx.conf
+          insertafter: "http {"
+          content: |
+            upstream mysite {
+                server {{ server_ip_1 }}:80 weight=2;
+                server {{ server_ip_2 }}:80 weight=1;
+                server {{ server_ip_3 }}:80 backup;
+            }
+
+            server {
+                listen 80;
+                server_name {{ nginx_ip }};
+                location / {
+                    root html;
+                    index index.html;
+                    proxy_pass http://mysite;
+                }
+            }
+            
+            
+      - name: Start Nginx service
+        service:
+            name: nginx
+            state: restarted
+        become: yes
+         
+      # reload nginx
+      - name : reload nginx
+#        path: /usr/sbin/
+        service:  name=nginx state=reloaded
+
+#——————————————————————————————————————————————————————
+
+  - name: setup database server
+    hosts: database
+    remote_user: ubuntu
+    gather_facts: True
+    become_user: root
+    become: true
+    
+    vars:
+      wp_mysql_db: wordpress
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      
+    tasks:
+      - name: Install Mysql Server
+        apt:
+          name: mysql-server
+          state: present
+          update_cache: yes
+
+      - name: Install Mysql python module
+        apt:
+          name: python-mysqldb
+          state: present
+
+      - name: Start Mysql Server
+        sudo: yes
+        service: 
+            name: mysql
+            state: started
+            enabled: true
+
+      - name: Create mysql database
+        mysql_db: name={{ wp_mysql_db }}  state=present
+        become: yes
+
+      - name: Create mysql user
+        mysql_user: 
+            name={{ wp_mysql_user }} 
+            password={{ wp_mysql_password }} 
+            priv='*.*:ALL,GRANT'
+
+        become: yes 
+
+      - name: restart mysql
+        service:
+          name: mysql
+          state: restarted
+          enabled: true
+        
+ #——————————————————————————————————————————————————————————————————————
+  - name: setup wordpress web server
+    hosts: web_server
+    remote_user: ubuntu
+    gather_facts: True
+    become_user: root
+    become: true
+    
+ 
+    tasks:
+     - name: Download WordPress
+       get_url: 
+         url: https://wordpress.org/latest.tar.gz 
+         dest: /tmp/wordpress.tar.gz
+
+     - name: Extract WordPress
+       unarchive: 
+         src: https://wordpress.org/latest.tar.gz 
+         dest: /var/www/html/
+         remote_src: yes
+       become: yes
+
+
+     - name: Copy sample config file
+       command: mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php creates=/var/www/html/wordpress/wp-config.php
+       become: yes
+
+     - name: Update WordPress config file
+       lineinfile:
+         dest: /var/www/html/wordpress/wp-config.php
+         regexp: "{{ item.regexp }}"
+         line: "{{ item.line }}"
+       with_items:
+           - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+           - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+           - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+       become: yes
+       
+
+     - name: Waiting for installation
+       wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
+
