@@ -102,7 +102,6 @@
             - php-xml
             - php-xmlrpc
             - php-gd
-            - php-mbstring
             - php-mcrypt
             - php-mysql
             - php-zip
