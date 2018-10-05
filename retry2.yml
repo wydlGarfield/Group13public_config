@@ -79,6 +79,12 @@
       wp_mysql_db: wordpress
       wp_mysql_user: wordpress
       wp_mysql_password: admin
+      
+    pre_tasks:
+      - name: Install python for Ansible
+        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+        register: output
+        changed_when: output.stdout != ""
  
     tasks:
     
