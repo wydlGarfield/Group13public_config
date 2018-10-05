@@ -1,5 +1,5 @@
 
-
+#-----------------------------------------
   - name: setup database server
     hosts: database
     remote_user: ubuntu
