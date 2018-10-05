@@ -79,7 +79,7 @@
   - name: setup database server
     hosts: database
     remote_user: ubuntu
-    gather_facts: True
+    gather_facts: False
     become_user: root
     become: true
     
@@ -150,7 +150,7 @@
   - name: setup wordpress web server
     hosts: web_server
     remote_user: ubuntu
-    gather_facts: True
+    gather_facts: False
     become_user: root
     become: true
     
