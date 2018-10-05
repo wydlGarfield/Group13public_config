@@ -83,41 +83,41 @@
     tasks:
     
      - name: Install Apache2
-         apt:
-              name: "{{item}}"
-              state: present
-         with_items: 
-           - apache2
-           - apache2-doc
-           - apache2-utils
+       apt:
+            name: "{{item}}"
+            state: present
+       with_items: 
+            - apache2
+            - apache2-doc
+            - apache2-utils
            
      - name: Installing php
-        apt: 
-          name: "{{item}}" 
-          state: present
-        with_items:
-        - php
-        - php-cli
-        - php-curl
-        - php-xml
-        - php-xmlrpc
-        - php-gd
-        - php-mbstring
-        - php-mcrypt
-        - php-mysql
-        - php-zip
+       apt: 
+            name: "{{item}}" 
+            state: present
+       with_items:
+            - php
+            - php-cli
+            - php-curl
+            - php-xml
+            - php-xmlrpc
+            - php-gd
+            - php-mbstring
+            - php-mcrypt
+            - php-mysql
+            - php-zip
         
      - name: Install common PHP Extensions
-        apt: 
-          name: libapache2-mod-php
-          state: present
-        notify:
-          - restart apache2
+       apt: 
+            name: libapache2-mod-php
+            state: present
+       notify:
+            - restart apache2
           
-    - name:  "Start apache Php"
-        service:  "name={{ item }} state=started"
-        with_items:
-        - apache2
+     - name:  "Start apache Php"
+       service:  "name={{ item }} state=started"
+       with_items:
+       - apache2
     
      - name: Download WordPress
        get_url: 
