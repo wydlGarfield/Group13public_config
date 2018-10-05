@@ -31,14 +31,16 @@ region = $region" > ~/.aws/config
 sudo chmod 666 ~/.aws/config
 
 
+# Create hosts file
 echo -e "[local]
-localhost \n
-[webserver]" > ~/hosts
+localhost\n
+[database]\n
+[web_server]\n
+[nginx]" > ~/hosts
 sudo chmod 666 ~/hosts
 
 
 # Create playbook config file
 cd ~
 sudo wget -c https://raw.githubusercontent.com/wydlGarfield/Group13public_config/master/ansible.cfg
-sudo wget -c https://raw.githubusercontent.com/wydlGarfield/Group13public_config/master/playbook.yml
 #sudo apt install awscli -y
