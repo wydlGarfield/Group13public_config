@@ -153,3 +153,10 @@
 
      - name: Waiting for installation
        wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
+       
+   handlers:
+   - name: restart apache2
+     service: 
+       name: apache2
+       state: restarted
+
