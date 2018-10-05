@@ -10,7 +10,7 @@ sudo apt update
 sudo apt -y install python-pip
 pip install botocore boto boto3
 
-pip install virtualenv ansible2.6.5
+pip install virtualenv ansible2.6
 source ansible2.1/bin/activate
 pip install ansible==2.6.5
 pip install redis
