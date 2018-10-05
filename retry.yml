@@ -41,11 +41,6 @@
           name: nginx
           state: started
           
-      - file:
-        path: /root/log
-        state: directory
-
-          
       # editing config file 
       - name: edit config file
         become: yes
