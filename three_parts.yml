@@ -14,7 +14,7 @@
       wp_mysql_db: wordpress
       wp_mysql_user: wordpress
       wp_mysql_password: admin
-      wp_mysql_host: 54.203.88.16
+      wp_mysql_host: 172.31.23.16:3306
       
     pre_tasks:
       - name: Install python for Ansible
