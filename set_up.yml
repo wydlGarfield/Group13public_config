@@ -255,7 +255,7 @@
          
       # reload nginx
       - name : reload nginx
-        path: /usr/sbin/
+        #path: /usr/sbin/
         service:  name=nginx state=reloaded
 
 #——————————————————————————————————————————————————————
