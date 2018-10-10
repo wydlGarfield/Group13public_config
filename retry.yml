@@ -1,6 +1,6 @@
 
 #-----------------------------------
-- hosts: webserver
+  - hosts: database
     name: Configure instance(s)
     user: ubuntu
     gather_facts: False
