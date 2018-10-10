@@ -59,7 +59,7 @@
        - apache2
      
      - name: Install Mysql client
-        apt:
+       apt:
           name: mysql-client
           state: present
           update_cache: yes
