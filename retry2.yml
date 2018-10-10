@@ -61,9 +61,9 @@
       - name: Accessing and Logging In MySQL
         shell: |
             sudo -S mysql -u root -padmin <<EOF
-            CREATE DATABASE moodle DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci; 
-            create user 'moodler'@'%' IDENTIFIED BY 'moodlerpassword'; 
-            GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON moodle.* TO 'moodler'@'%' IDENTIFIED BY 'moodlerpassword';
+            CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci; 
+            create user 'wordpress'@'%' IDENTIFIED BY 'admin'; 
+            GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON wordpress.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
             exit
             EOF
 
