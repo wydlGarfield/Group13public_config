@@ -6,14 +6,14 @@ sudo apt -y install software-properties-common
 sudo apt-add-repository ppa:ansible/ansible -y
 
 sudo apt update
-#sudo apt -y install ansible
+sudo apt -y install ansible
 sudo apt -y install python-pip
 pip install botocore boto boto3
 
-pip install virtualenv ansible2.6
-source ansible2.1/bin/activate
-pip install ansible==2.6.4
-pip install redis
+#pip install virtualenv ansible2.6
+#source ansible2.1/bin/activate
+#pip install ansible==2.6.4
+#pip install redis
 
 mkdir -pv ~/.aws/
 
