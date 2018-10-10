@@ -47,12 +47,6 @@
               to_port: 80
               cidr_ip: 0.0.0.0/0
 
-            # PostgreSQL
-            - proto: tcp
-              from_port: 5432
-              to_port: 5432
-              cidr_ip: 0.0.0.0/0
-
             # SSH
             - proto: tcp
               from_port: 22
@@ -271,7 +265,9 @@
     remote_user: ubuntu
     gather_facts: False
     become_user: root
-    become: true
+    become: yes
+    become_method: sudo
+    
     
     vars:
       wp_mysql_db: wordpress
@@ -283,6 +279,7 @@
         raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
         register: output
         changed_when: output.stdout != ""
+      - setup: # aka gather_facts
         
       - name: Install required software
         apt: name={{ item }} state=present
