@@ -9,7 +9,7 @@
     vars:
       instance_type: t2.micro
       security_group: security2
-      image: ami-0e32ec5bc225539f5
+      image: ami-ba602bc2
       keypair: new_key
       region: us-west-2
       large_volumes:
