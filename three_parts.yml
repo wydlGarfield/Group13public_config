@@ -79,79 +79,7 @@
         path: /usr/sbin/
         service:  name=nginx state=reloaded
 
-#——————————————————————————————————————————————————————
 
-  - name: setup database server
-    hosts: database
-    remote_user: ubuntu
-    gather_facts: False
-    become_user: root
-    become: yes
-    become_method: sudo
-    
-    
-    vars:
-      wp_mysql_db: wordpress
-      wp_mysql_user: wordpress
-      wp_mysql_password: admin
-      
-    pre_tasks:
-      - name: Install python for Ansible
-        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
-        register: output
-        changed_when: output.stdout != ""
-      - setup: # aka gather_facts
-        
-      - name: Install required software
-        apt: name={{ item }} state=present
-        sudo: yes
-        with_items:
-          - apache2
-          - build-essential
-          - python-dev
-          - libmysqlclient-dev
-          - python-mysqldb
-          - mysql-server
-          - mysql-client
-          - python-pip
-          - python3-pip
-      
-    tasks:
-      - name: Install Mysql Server
-        apt:
-          name: mysql-server
-          state: present
-          update_cache: yes
-
-      - name: Install Mysql python module
-        apt:
-          name: python-mysqldb
-          state: present
-
-      - name: Start Mysql Server
-        sudo: yes
-        service: 
-            name: mysql
-            state: started
-            enabled: true
-
-      - name: Create mysql database
-        mysql_db: name={{ wp_mysql_db }}  state=present
-        become: yes
-
-      - name: Create mysql user
-        mysql_user: 
-            name={{ wp_mysql_user }} 
-            password={{ wp_mysql_password }} 
-            priv='*.*:ALL,GRANT'
-
-        become: yes 
-
-      - name: restart mysql
-        service:
-          name: mysql
-          state: restarted
-          enabled: true
         
  #——————————————————————————————————————————————————————————————————————
   - name: setup wordpress web server
@@ -248,3 +176,77 @@
       service: 
         name: apache2
         state: restarted
+        
+      #——————————————————————————————————————————————————————
+
+  - name: setup database server
+    hosts: database
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: yes
+    become_method: sudo
+    
+    
+    vars:
+      wp_mysql_db: wordpress
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      
+    pre_tasks:
+      - name: Install python for Ansible
+        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+        register: output
+        changed_when: output.stdout != ""
+      - setup: # aka gather_facts
+        
+      - name: Install required software
+        apt: name={{ item }} state=present
+        sudo: yes
+        with_items:
+          - apache2
+          - build-essential
+          - python-dev
+          - libmysqlclient-dev
+          - python-mysqldb
+          - mysql-server
+          - mysql-client
+          - python-pip
+          - python3-pip
+      
+    tasks:
+      - name: Install Mysql Server
+        apt:
+          name: mysql-server
+          state: present
+          update_cache: yes
+
+      - name: Install Mysql python module
+        apt:
+          name: python-mysqldb
+          state: present
+
+      - name: Start Mysql Server
+        sudo: yes
+        service: 
+            name: mysql
+            state: started
+            enabled: true
+
+      - name: Create mysql database
+        mysql_db: name={{ wp_mysql_db }}  state=present
+        become: yes
+
+      - name: Create mysql user
+        mysql_user: 
+            name={{ wp_mysql_user }} 
+            password={{ wp_mysql_password }} 
+            priv='*.*:ALL,GRANT'
+
+        become: yes 
+
+      - name: restart mysql
+        service:
+          name: mysql
+          state: restarted
+          enabled: true
