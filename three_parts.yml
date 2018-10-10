@@ -1,0 +1,250 @@
+#———————————————————————————————————————————
+  - name: setup nginx management server
+    hosts: nginx
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: true
+
+    vars:
+      db_user: wordpress
+      db_name: wordpress
+      db_password: admin
+      server_ip_1: "{{ groups.web_server.0 }}"
+      server_ip_2: "{{ groups.web_server.1 }}"
+      server_ip_3: "{{ groups.web_server.2 }}"
+      nginx_ip: "{{ groups.nginx.0 }}"
+
+    tasks:
+
+      - name: Update Ubuntu & Install essential tools
+        become: yes
+        apt: 
+          name: "{{ packages }}"
+          state: latest
+          update_cache: yes
+        vars:
+          packages:
+            - python-psycopg2
+            - python3-psycopg2
+
+      # install nginx
+      - name: Install nginx
+        become: yes
+        apt:
+          name: nginx
+          update_cache: yes
+          state: latest
+          
+      - name: enable nginx
+        service:
+          name: nginx
+          state: started
+          
+#      - file:
+#        path: "/root/log"
+#        state: directory
+          
+      # editing config file 
+      - name: edit config file
+        become: yes
+        blockinfile:
+          path: /etc/nginx/nginx.conf
+          insertafter: "http {"
+          content: |
+            upstream mysite {
+                server {{ server_ip_1 }}:80 weight=1;
+                server {{ server_ip_2 }}:80 weight=1;
+                server {{ server_ip_3 }}:80 backup;
+            }
+            server {
+                listen 80;
+                server_name {{ nginx_ip }};
+                location / {
+                    root html;
+                    index index.html;
+                    proxy_pass http://mysite;
+                }
+            }
+            
+            
+      - name: Start Nginx service
+        service:
+            name: nginx
+            state: restarted
+        become: yes
+         
+      # reload nginx
+      - name : reload nginx
+        path: /usr/sbin/
+        service:  name=nginx state=reloaded
+
+#——————————————————————————————————————————————————————
+
+  - name: setup database server
+    hosts: database
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: yes
+    become_method: sudo
+    
+    
+    vars:
+      wp_mysql_db: wordpress
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      
+    pre_tasks:
+      - name: Install python for Ansible
+        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+        register: output
+        changed_when: output.stdout != ""
+      - setup: # aka gather_facts
+        
+      - name: Install required software
+        apt: name={{ item }} state=present
+        sudo: yes
+        with_items:
+          - apache2
+          - build-essential
+          - python-dev
+          - libmysqlclient-dev
+          - python-mysqldb
+          - mysql-server
+          - mysql-client
+          - python-pip
+          - python3-pip
+      
+    tasks:
+      - name: Install Mysql Server
+        apt:
+          name: mysql-server
+          state: present
+          update_cache: yes
+
+      - name: Install Mysql python module
+        apt:
+          name: python-mysqldb
+          state: present
+
+      - name: Start Mysql Server
+        sudo: yes
+        service: 
+            name: mysql
+            state: started
+            enabled: true
+
+      - name: Create mysql database
+        mysql_db: name={{ wp_mysql_db }}  state=present
+        become: yes
+
+      - name: Create mysql user
+        mysql_user: 
+            name={{ wp_mysql_user }} 
+            password={{ wp_mysql_password }} 
+            priv='*.*:ALL,GRANT'
+
+        become: yes 
+
+      - name: restart mysql
+        service:
+          name: mysql
+          state: restarted
+          enabled: true
+        
+ #——————————————————————————————————————————————————————————————————————
+  - name: setup wordpress web server
+    hosts: web_server
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: yes
+    become_method: sudo
+    
+    vars: 
+     
+      wp_mysql_db: wordpress
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      
+    pre_tasks:
+      - name: Install python for Ansible
+        raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+        register: output
+        changed_when: output.stdout != ""
+ 
+    tasks:
+    
+     - name: Install Apache2
+       apt:
+            name: "{{item}}"
+            state: present
+       with_items: 
+            - apache2
+            - apache2-doc
+            - apache2-utils
+           
+     - name: Installing php
+       apt: 
+            name: "{{item}}" 
+            state: present
+       with_items:
+            - php
+            - php-cli
+            - php-curl
+            - php-xml
+            - php-xmlrpc
+            - php-gd
+            - php-mysql
+        
+     - name: Install common PHP Extensions
+       apt: 
+            name: libapache2-mod-php
+            state: present
+       notify:
+            - restart apache2
+          
+     - name:  "Start apache Php"
+       service:  "name={{ item }} state=started"
+       with_items:
+       - apache2
+    
+    
+     - name: Download WordPress
+       get_url: 
+         url: https://wordpress.org/latest.tar.gz 
+         dest: /tmp/wordpress.tar.gz
+
+     - name: Extract WordPress
+       unarchive: 
+         src: https://wordpress.org/latest.tar.gz 
+         dest: /var/www/html/
+         remote_src: yes
+       become: yes
+
+
+     - name: Copy sample config file
+       command: mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php creates=/var/www/html/wordpress/wp-config.php
+       become: yes
+
+     - name: Update WordPress config file
+       lineinfile:
+         dest: /var/www/html/wordpress/wp-config.php
+         regexp: "{{ item.regexp }}"
+         line: "{{ item.line }}"
+       with_items:
+           - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+           - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+           - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+       become: yes
+       
+
+     - name: Waiting for installation
+       wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
+       
+    handlers:
+    - name: restart apache2
+      service: 
+        name: apache2
+        state: restarted
