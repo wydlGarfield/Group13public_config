@@ -63,7 +63,8 @@
             sudo -S mysql -u root -p admin <<EOF
             CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
             create user 'wordpress'@'%' IDENTIFIED BY 'admin'; 
-            GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON wordpress.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
+            GRANT ALL ON *.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
+            FLUSH PRIVILEGES;
             exit
             EOF
 
