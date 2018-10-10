@@ -57,6 +57,12 @@
        service:  "name={{ item }} state=started"
        with_items:
        - apache2
+     
+     - name: Install Mysql client
+        apt:
+          name: mysql-client
+          state: present
+          update_cache: yes
     
     
      - name: Download WordPress
