@@ -94,11 +94,6 @@
            - {'regexp': "define\\('DB_HOST', '(.)+'\\);", 'line': "define('DB_HOST', '{{wp_mysql_host}}');"}
        become: yes
        
-     - name: Get wordpress script
-       shell: wget https://raw.githubusercontent.com/wydlGarfield/Group13public_config/master/wordpress.sh
-              
-     - name: Install wordpress page         
-       shell: sudo bash wordpress.sh
               
      - name: Waiting for installation
        wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
