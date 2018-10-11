@@ -81,10 +81,17 @@
      - name: Copy sample config file
        command: mv /var/www/html/wordpress/wp-config-sample.php /var/www/html/wordpress/wp-config.php creates=/var/www/html/wordpress/wp-config.php
        become: yes
+       
+     - name: Copying files
+       copy:
+         src: /var/www/html/wordpress/.
+         dest: /var/www/html
+         remote_src: yes
+         mode: 0644
 
      - name: Update WordPress config file
        lineinfile:
-         dest: /var/www/html/wordpress/wp-config.php
+         dest: /var/www/html/wp-config.php
          regexp: "{{ item.regexp }}"
          line: "{{ item.line }}"
        with_items:
@@ -93,6 +100,15 @@
            - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
            - {'regexp': "define\\('DB_HOST', '(.)+'\\);", 'line': "define('DB_HOST', '{{wp_mysql_host}}');"}
        become: yes
+       
+     - name: Get wordpress script
+       shell: wget https://raw.githubusercontent.com/wydlGarfield/Group13public_config/master/wordpress.sh
+       become: yes
+              
+     - name: Install wordpress page         
+       shell: bash wordpress.sh
+       become: yes
+
        
               
      - name: Waiting for installation
