@@ -94,6 +94,17 @@
            - {'regexp': "define\\('DB_HOST', '(.)+'\\);", 'line': "define('DB_HOST', '{{wp_mysql_host}}');"}
        become: yes
        
+     - name:Install wordpress page
+       shell: ipurl="$(curl ipinfo.io/ip --max-time 8)"  
+              siteurl=${ipurl}
+              adminuser=wordpress
+              adminpass=admin
+              adminemail=tom@tom.com
+              sitetitle=Welcome
+              sudo -u ubuntu -i -- wp core install --url=${siteurl} --title="${sitetitle}" --admin_user=${adminuser} --admin_password=${adminpass} --path=/var/www/html --admin_email="${adminemail}"
+              exit
+
+       
 
      - name: Waiting for installation
        wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
