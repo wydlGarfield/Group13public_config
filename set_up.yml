@@ -192,7 +192,6 @@
 
     vars:
       db_user: wordpress
-      db_name: wordpress
       db_password: admin
       server_ip_1: "{{ groups.web_server.0 }}"
       server_ip_2: "{{ groups.web_server.1 }}"
@@ -279,6 +278,9 @@
       wp_mysql_db: wordpress
       wp_mysql_user: wordpress
       wp_mysql_password: admin
+      db1: "{{ groups.web_server.0 }}"
+      db2: "{{ groups.web_server.1 }}"
+      db3: "{{ groups.web_server.2 }}"
       
     pre_tasks:
       - name: Install python for Ansible
@@ -330,9 +332,12 @@
       - name: Accessing and Logging In MySQL
         shell: |
             sudo -S mysql -u root -padmin <<EOF
-            CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
+            CREATE DATABASE {{ db1 }} DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
+            CREATE DATABASE {{ db2 }} DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
+            CREATE DATABASE {{ db3 }} DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
             create user 'wordpress'@'%' IDENTIFIED BY 'admin'; 
-            GRANT ALL ON wordpress.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
+            GRANT ALL ON *.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
+            GRANT ALL ON *.* TO 'root'@'%' IDENTIFIED BY 'admin';
             FLUSH PRIVILEGES;
             exit
             EOF
@@ -354,7 +359,7 @@
     become_method: sudo
     
     vars: 
-     
+    
       wp_mysql_db: wordpress
       wp_mysql_user: wordpress
       wp_mysql_password: admin
@@ -428,34 +433,147 @@
        
      
      - name: Copying files
-       command: cp /var/www/html/wordpress/. /var/www/html
-       become: yes
-
-     - name: Update WordPress config file
-       lineinfile:
-         dest: /var/www/html/wp-config.php
-         regexp: "{{ item.regexp }}"
-         line: "{{ item.line }}"
-       with_items:
-           - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
-           - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
-           - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
-           - {'regexp': "define\\('DB_Host', '(.)+'\\);", 'line': "define('DB_Host', '{{wp_mysql_host}}');"}
+       shell: cp -a /var/www/html/wordpress/. /var/www/html
        become: yes
        
      - name: Get wordpress script
        shell: wget https://raw.githubusercontent.com/wydlGarfield/Group13public_config/master/wordpress.sh
        become: yes
-              
-     - name: Install wordpress page         
-       shell: bash wordpress.sh
-       become: yes
 
-     - name: Waiting for installation
-       wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
+#     - name: Update WordPress config file
+#       lineinfile:
+#         dest: /var/www/html/wp-config.php
+#         regexp: "{{ item.regexp }}"
+#         line: "{{ item.line }}"
+#       with_items:
+#           - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+#           - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+#           - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+#           - {'regexp': "define\\('DB_Host', '(.)+'\\);", 'line': "define('DB_Host', '{{wp_mysql_host}}');"}
+#       become: yes
+       
+              
+#     - name: Install wordpress page         
+#       shell: bash wordpress.sh
+#       become: yes
+
+#     - name: Waiting for installation
+#       wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
        
     handlers:
     - name: restart apache2
       service: 
         name: apache2
         state: restarted
+        
+#——————————————————————————————————————————————————————————————————————
+  - name: setup each wordpress config
+    hosts: "{{ groups.web_server.0 }}"
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: yes
+    become_method: sudo
+    
+    vars: 
+    
+      wp_mysql_db: "{{ groups.web_server.0 }}"
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      wp_mysql_host: "{{ groups.database.0 }}"
+      
+    tasks:
+    
+      - name: Update WordPress config file
+        lineinfile:
+           dest: /var/www/html/wp-config.php
+           regexp: "{{ item.regexp }}"
+           line: "{{ item.line }}"
+        with_items:
+             - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+             - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+             - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+             - {'regexp': "define\\('DB_Host', '(.)+'\\);", 'line': "define('DB_Host', '{{wp_mysql_host}}');"}
+        become: yes
+
+      - name: Install wordpress page         
+        shell: bash wordpress.sh
+        become: yes
+        
+      - name: Waiting for installation
+        wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
+
+#——————————————————————————————————————————————————————————————————————
+  - name: setup each wordpress config
+    hosts: "{{ groups.web_server.1 }}"
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: yes
+    become_method: sudo
+    
+    vars: 
+    
+      wp_mysql_db: "{{ groups.web_server.1 }}"
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      wp_mysql_host: "{{ groups.database.0 }}"
+      
+    tasks:
+    
+      - name: Update WordPress config file
+        lineinfile:
+           dest: /var/www/html/wp-config.php
+           regexp: "{{ item.regexp }}"
+           line: "{{ item.line }}"
+        with_items:
+             - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+             - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+             - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+             - {'regexp': "define\\('DB_Host', '(.)+'\\);", 'line': "define('DB_Host', '{{wp_mysql_host}}');"}
+        become: yes
+
+      - name: Install wordpress page         
+        shell: bash wordpress.sh
+        become: yes
+        
+      - name: Waiting for installation
+        wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
+
+#——————————————————————————————————————————————————————————————————————
+  - name: setup each wordpress config
+    hosts: "{{ groups.web_server.2 }}"
+    remote_user: ubuntu
+    gather_facts: False
+    become_user: root
+    become: yes
+    become_method: sudo
+    
+    vars: 
+    
+      wp_mysql_db: "{{ groups.web_server.2 }}"
+      wp_mysql_user: wordpress
+      wp_mysql_password: admin
+      wp_mysql_host: "{{ groups.database.0 }}"
+      
+    tasks:
+    
+      - name: Update WordPress config file
+        lineinfile:
+           dest: /var/www/html/wp-config.php
+           regexp: "{{ item.regexp }}"
+           line: "{{ item.line }}"
+        with_items:
+             - {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+             - {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+             - {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+             - {'regexp': "define\\('DB_Host', '(.)+'\\);", 'line': "define('DB_Host', '{{wp_mysql_host}}');"}
+        become: yes
+
+      - name: Install wordpress page         
+        shell: bash wordpress.sh
+        become: yes
+        
+      - name: Waiting for installation
+        wait_for: host=127.0.0.1 port=80 delay=10 timeout=600
+
