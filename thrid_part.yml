@@ -94,7 +94,7 @@
            - {'regexp': "define\\('DB_HOST', '(.)+'\\);", 'line': "define('DB_HOST', '{{wp_mysql_host}}');"}
        become: yes
        
-     - name:Install wordpress page
+     - name: Install wordpress page
        shell: |
               ipurl="$(curl ipinfo.io/ip --max-time 8)"  
               siteurl=${ipurl}
