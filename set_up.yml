@@ -431,6 +431,7 @@
        copy:
          src: /var/www/html/wordpress/.
          dest: /var/www/html
+         remote_src: yes
          mode: 0644
 
 
