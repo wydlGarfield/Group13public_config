@@ -332,9 +332,9 @@
       - name: Accessing and Logging In MySQL
         shell: |
             sudo -S mysql -u root -padmin <<EOF
-            CREATE DATABASE {{ db1 }} DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
-            CREATE DATABASE {{ db2 }} DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
-            CREATE DATABASE {{ db3 }} DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
+            CREATE DATABASE wordpress1 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
+            CREATE DATABASE wordpress2 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
+            CREATE DATABASE wordpress3 DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
             create user 'wordpress'@'%' IDENTIFIED BY 'admin'; 
             GRANT ALL ON *.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
             GRANT ALL ON *.* TO 'root'@'%' IDENTIFIED BY 'admin';
@@ -477,7 +477,7 @@
     
     vars: 
     
-      wp_mysql_db: "{{ groups.web_server.0 }}"
+      wp_mysql_db: wordpress1
       wp_mysql_user: wordpress
       wp_mysql_password: admin
       wp_mysql_host: "{{ groups.database.0 }}"
@@ -514,7 +514,7 @@
     
     vars: 
     
-      wp_mysql_db: "{{ groups.web_server.1 }}"
+      wp_mysql_db: wordpress2
       wp_mysql_user: wordpress
       wp_mysql_password: admin
       wp_mysql_host: "{{ groups.database.0 }}"
@@ -551,7 +551,7 @@
     
     vars: 
     
-      wp_mysql_db: "{{ groups.web_server.2 }}"
+      wp_mysql_db: wordpress3
       wp_mysql_user: wordpress
       wp_mysql_password: admin
       wp_mysql_host: "{{ groups.database.0 }}"
