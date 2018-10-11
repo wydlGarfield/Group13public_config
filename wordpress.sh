@@ -1,17 +1,7 @@
 #!/bin/bash
 
-sudo cp -a /var/www/html/wordpress/. /var/www/html
+#sudo cp -a /var/www/html/wordpress/. /var/www/html
 
-#salts
-
-# perl -i -pe'
-#   BEGIN {
-#     @chars = ("a" .. "z", "A" .. "Z", 0 .. 9);
-#     push @chars, split //, "!@#$%^&*()-_ []{}<>~\`+=,.;:/?|";
-#     sub salt { join "", map $chars[ rand @chars ], 1 .. 64 }
-#   }
-#   s/put your unique phrase here/salt()/ge
-# ' /var/www/html/wp-config.php
 
 
 chown ubuntu:www-data  -R /var/www/html/* 
