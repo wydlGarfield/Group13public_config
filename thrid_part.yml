@@ -95,7 +95,8 @@
        become: yes
        
      - name:Install wordpress page
-       shell: ipurl="$(curl ipinfo.io/ip --max-time 8)"  
+       shell: |
+              ipurl="$(curl ipinfo.io/ip --max-time 8)"  
               siteurl=${ipurl}
               adminuser=wordpress
               adminpass=admin
