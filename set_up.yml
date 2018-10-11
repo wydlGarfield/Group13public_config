@@ -46,6 +46,12 @@
               from_port: 80
               to_port: 80
               cidr_ip: 0.0.0.0/0
+              
+            # MYSQL
+            - proto: tcp
+              from_port: 3306
+              to_port: 3306
+              cidr_ip: 0.0.0.0/0
 
             # SSH
             - proto: tcp
@@ -323,10 +329,11 @@
             
       - name: Accessing and Logging In MySQL
         shell: |
-            sudo -S mysql -u root -padmin <<EOF
-            CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci; 
+            sudo -S mysql -u root -p admin <<EOF
+            CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
             create user 'wordpress'@'%' IDENTIFIED BY 'admin'; 
-            GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,CREATE TEMPORARY TABLES,DROP,INDEX,ALTER ON wordpress.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
+            GRANT ALL ON wordpress.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
+            FLUSH PRIVILEGES;
             exit
             EOF
 
@@ -351,7 +358,7 @@
       wp_mysql_db: wordpress
       wp_mysql_user: wordpress
       wp_mysql_password: admin
-      wp_mysql_host: 18.216.182.74
+      wp_mysql_host: "{{ groups.database.0 }}:3306"
       
     pre_tasks:
       - name: Install python for Ansible
@@ -394,6 +401,12 @@
        service:  "name={{ item }} state=started"
        with_items:
        - apache2
+       
+     - name: Install Mysql client
+       apt:
+          name: mysql-client
+          state: present
+          update_cache: yes
     
     
      - name: Download WordPress
