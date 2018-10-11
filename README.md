@@ -1,11 +1,11 @@
 
 # Wordpress Install with Ansible and Nginx
 
+first wget the two files to you new AWS instance
+
 run prepare.sh with `sudo bash prepare.sh`
 
-and set_up.yml with 
-
-`ansible-playbook -i ./hosts set_up.yml`
+and set_up.yml with `ansible-playbook -i ./hosts set_up.yml`
 
 It will create 5 instances on AWS
 
@@ -15,7 +15,7 @@ three for wordpress
 
 Just input the Nginx server public ip address into web browser and it will display different wordpress server each time.
 
-## If you want to run the playbook more than once, please delete the new_key.pem in the keypair.
+## If you want to run the playbook more than once, please delete the new_key.pem in the keypair of AWS's network and safety.
 
 
 
