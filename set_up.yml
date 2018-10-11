@@ -329,7 +329,7 @@
             
       - name: Accessing and Logging In MySQL
         shell: |
-            sudo -S mysql -u root -p admin <<EOF
+            sudo -S mysql -u root -padmin <<EOF
             CREATE DATABASE wordpress DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci; 
             create user 'wordpress'@'%' IDENTIFIED BY 'admin'; 
             GRANT ALL ON wordpress.* TO 'wordpress'@'%' IDENTIFIED BY 'admin';
