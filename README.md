@@ -1,5 +1,5 @@
 
-### Wordpress Install with Ansible and Nginx
+# Wordpress Install with Ansible and Nginx
 
 run prepare.sh with `sudo bash prepare.sh`
 
@@ -15,7 +15,7 @@ three for wordpress
 
 Just input the Nginx server public ip address into web browser and it will display different wordpress server each time.
 
-# If you want to run the playbook more than once, please delete the new_key.pem in the keypair.
+## If you want to run the playbook more than once, please delete the new_key.pem in the keypair.
 
 
 
@@ -46,7 +46,7 @@ Just input the Nginx server public ip address into web browser and it will displ
 
 
 
-# Group13public_config
+### Group13public_config
 upload config files to public repository
 
 useful command:
