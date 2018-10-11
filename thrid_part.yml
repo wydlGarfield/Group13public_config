@@ -83,12 +83,10 @@
        become: yes
        
      - name: Copying files
-       copy:
-         src: /var/www/html/wordpress/.
-         dest: /var/www/html
-         remote_src: yes
-         mode: 0644
-
+       command: cp /var/www/html/wordpress/. /var/www/html
+       become: yes
+       
+       
      - name: Update WordPress config file
        lineinfile:
          dest: /var/www/html/wp-config.php
