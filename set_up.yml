@@ -358,7 +358,7 @@
       wp_mysql_db: wordpress
       wp_mysql_user: wordpress
       wp_mysql_password: admin
-      wp_mysql_host: "{{ groups.database.0 }}:3306"
+      wp_mysql_host: "{{ groups.database.0 }}"
       
     pre_tasks:
       - name: Install python for Ansible
